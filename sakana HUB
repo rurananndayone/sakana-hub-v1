@@ -1,0 +1,126 @@
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local RunService = game:GetService("RunService")
+local localPlayer = Players.LocalPlayer
+
+if CoreGui:FindFirstChild("SakanaHubV1_Final") then CoreGui.SakanaHubV1_Final:Destroy() end
+
+local GHub = Instance.new("ScreenGui", CoreGui)
+GHub.Name = "SakanaHubV1_Final"
+
+-- [[ 1. メインUI (開閉しても機能は止まらない) ]] --
+local Main = Instance.new("Frame", GHub)
+Main.Size = UDim2.new(0, 200, 0, 130)
+Main.Position = UDim2.new(0.05, 0, 0.4, 0)
+Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+Main.Active = true
+Main.Draggable = true
+Main.ClipsDescendants = false
+Main.Visible = true 
+Instance.new("UICorner", Main)
+
+local UIStroke = Instance.new("UIStroke", Main)
+UIStroke.Thickness = 3
+task.spawn(function()
+    local h = 0
+    while task.wait(0.05) do
+        h = (h + 0.01) % 1
+        UIStroke.Color = Color3.fromHSV(h, 0.8, 1)
+    end
+end)
+
+local Title = Instance.new("TextLabel", Main)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Position = UDim2.new(0, 0, 0, 5)
+Title.BackgroundTransparency = 1
+Title.Text = "🐟 Sakana Hub v1 🐟"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 18
+
+local ToggleBtn = Instance.new("TextButton", Main)
+ToggleBtn.Size = UDim2.new(0.9, 0, 0, 70)
+ToggleBtn.Position = UDim2.new(0.05, 0, 0, 45)
+ToggleBtn.Text = "sakana"
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(60, 0, 0)
+ToggleBtn.TextColor3 = Color3.new(1, 1, 1)
+ToggleBtn.Font = Enum.Font.SourceSansBold
+ToggleBtn.TextSize = 24
+Instance.new("UICorner", ToggleBtn)
+
+-- [[ 2. UI開閉用 🐟 ボタン ]] --
+local OpenBtn = Instance.new("TextButton", GHub)
+OpenBtn.Size = UDim2.new(0, 50, 0, 50)
+OpenBtn.Position = UDim2.new(0.02, 0, 0.45, 0)
+OpenBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+OpenBtn.Text = "🐟"
+OpenBtn.TextSize = 30
+OpenBtn.Draggable = true
+Instance.new("UICorner", OpenBtn)
+local OpenStroke = Instance.new("UIStroke", OpenBtn)
+OpenStroke.Thickness = 2
+OpenStroke.Color = Color3.new(1, 1, 1)
+
+OpenBtn.MouseButton1Click:Connect(function()
+    Main.Visible = not Main.Visible
+end)
+
+-- [[ 3. 魚エフェクト ]] --
+local emojis = {}
+local eRnd = Random.new()
+for i = 1, 10 do
+    local label = Instance.new("TextLabel", Main)
+    label.BackgroundTransparency = 1
+    label.Text = "🐟"
+    label.TextSize = eRnd:NextInteger(15, 25)
+    label.Position = UDim2.new(eRnd:NextNumber(-0.1, 1.1), 0, eRnd:NextNumber(-0.1, 1.1), 0)
+    table.insert(emojis, {
+        label = label,
+        speed = eRnd:NextNumber(1, 2.5),
+        amp = eRnd:NextNumber(10, 25),
+        angle = eRnd:NextNumber(0, math.pi * 2)
+    })
+end
+
+RunService.RenderStepped:Connect(function(dt)
+    if not Main.Visible then return end
+    for _, data in ipairs(emojis) do
+        data.angle = data.angle + data.speed * dt
+        data.label.Rotation = math.sin(data.angle) * 20
+        local offsetX = math.sin(data.angle) * data.amp
+        local offsetY = math.cos(data.angle) * (data.amp * 0.5)
+        data.label.Position = UDim2.new(data.label.Position.X.Scale, offsetX, data.label.Position.Y.Scale, offsetY)
+    end
+end)
+
+-- [[ 4. ★ 重要：機能部 (Main.Visibleに関係なく動作) ★ ]] --
+local isActive = false
+task.spawn(function()
+    while true do
+        -- UIが消えていても、isActiveがONならハックは実行され続ける
+        if isActive then
+            pcall(function()
+                for _, v in pairs(workspace:GetDescendants()) do
+                    if v:IsA("ProximityPrompt") then
+                        v.HoldDuration = 0
+                        v.RequiresLineOfSight = false
+                    end
+                end
+            end)
+        end
+        task.wait(0.5)
+    end
+end)
+
+ToggleBtn.MouseButton1Click:Connect(function()
+    isActive = not isActive
+    if isActive then
+        ToggleBtn.Text = "🐟" 
+        ToggleBtn.TextSize = 45
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 150)
+    else
+        ToggleBtn.Text = "sakana"
+        ToggleBtn.TextSize = 24
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(60, 0, 0)
+    end
+end)
